@@ -7,6 +7,7 @@
     <a href="{{ ident.get_absolute_url }}">{{ ident }}</a>{% if not identity_is_enabled %} {% trans "(disabled)" %}{% endif %}
   </td>
   <td name="name_or_rcpt">{{ ident.name_or_rcpt }}</td>
+  <td name="desc">{{ ident.description }}</td>
   <td name="tags">{% render_tags ident.tags %}</td>
   <td name="actions">{% identity_actions user ident %}</td>
 </tr>
