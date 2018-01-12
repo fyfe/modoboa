@@ -8,6 +8,7 @@ This module extra functions/shortcuts to communicate with the system
 from __future__ import unicode_literals
 
 import inspect
+import os
 import re
 import subprocess
 
@@ -51,4 +52,24 @@ def guess_extension_name():
     match = re.match(r"(?:modoboa\.)?(?:extensions\.)?([^\.$]+)", modname)
     if match is not None:
         return match.group(1)
+    return None
+
+
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
+def which(program, search_path=None):
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        if not search_path:
+            search_path = os.environ["PATH"].split(os.pathsep)
+        for path in search_path:
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
     return None

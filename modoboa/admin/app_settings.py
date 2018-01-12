@@ -12,7 +12,7 @@ from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _, ugettext_lazy
 
 from modoboa.lib.form_utils import SeparatorField, YesNoField
-from modoboa.lib.sysutils import exec_cmd
+from modoboa.lib.sysutils import exec_cmd, is_exe, which
 from modoboa.parameters import forms as param_forms
 from . import constants
 
@@ -153,19 +153,18 @@ class AdminParametersForm(param_forms.AdminParametersForm):
             "default_mailbox_quota": 2
         }
         hide_fields = False
+        known_paths = getattr(
+            settings, "DOVECOT_LOOKUP_PATH",
+            ("/usr/sbin/dovecot", "/usr/local/sbin/dovecot")
+        )
         dpath = None
-        code, output = exec_cmd("which dovecot")
-        if not code:
-            dpath = force_text(output).strip()
-        else:
-            known_paths = getattr(
-                settings, "DOVECOT_LOOKUP_PATH",
-                ("/usr/sbin/dovecot", "/usr/local/sbin/dovecot")
-            )
-            for fpath in known_paths:
-                if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
-                    dpath = fpath
-        if dpath:
+        for path in known_paths:
+            if is_exe(path):
+                dpath = path
+                break
+        if dpath is None:
+            dpath = which("dovecot")
+        if dpath is not None:
             try:
                 code, version = exec_cmd("%s --version" % dpath)
             except OSError:
@@ -204,8 +203,7 @@ class AdminParametersForm(param_forms.AdminParametersForm):
                 raise forms.ValidationError(
                     ugettext_lazy("Directory not found.")
                 )
-            code, output = exec_cmd("which openssl")
-            if code:
+            if which("openssl") is None:
                 raise forms.ValidationError(
                     ugettext_lazy(
                         "openssl not found, please make sure it is installed.")
