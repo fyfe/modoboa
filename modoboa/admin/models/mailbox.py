@@ -159,7 +159,8 @@ class Mailbox(AdminObject):
             if curuser != mbowner:
                 options["sudo_user"] = mbowner
             code, output = exec_cmd(
-                "doveadm user -f home %s" % self.full_address, **options
+                ["doveadm", "user", "-f", "home", self.full_address],
+                **options
             )
             if code:
                 raise lib_exceptions.InternalError(

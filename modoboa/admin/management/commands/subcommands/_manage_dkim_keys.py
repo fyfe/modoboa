@@ -26,14 +26,16 @@ class ManageDKIMKeys(BaseCommand):
         key_size = (
             domain.dkim_key_length if domain.dkim_key_length
             else self.default_key_length)
-        code, output = sysutils.exec_cmd(
-            "openssl genrsa -out {} {}".format(pkey_path, key_size))
+        code, output = sysutils.exec_cmd([
+            "openssl", "genrsa", "-out", pkey_path, "%d" % key_size
+        ])
         if code:
             print("Failed to generate DKIM private key for domain {}: {}"
                   .format(domain.name, smart_text(output)))
         domain.dkim_private_key_path = pkey_path
-        code, output = sysutils.exec_cmd(
-            "openssl rsa -in {} -pubout".format(pkey_path))
+        code, output = sysutils.exec_cmd([
+            "openssl", "rsa", "-in", pkey_path, "-pubout"
+        ])
         if code:
             print("Failed to generate DKIM public key for domain {}: {}"
                   .format(domain.name, smart_text(output)))

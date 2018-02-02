@@ -49,9 +49,7 @@ class Command(BaseCommand):
                 os.makedirs(dirname)
             except os.error as e:
                 raise OperationError(str(e))
-        code, output = exec_cmd(
-            "mv %s %s" % (operation.argument, new_mail_home)
-        )
+        code, output = exec_cmd(["mv", operation.argument, new_mail_home])
         if code:
             raise OperationError(output)
 
@@ -76,9 +74,9 @@ class Command(BaseCommand):
         if os.path.exists(path):
             with open(path) as fp:
                 pid = fp.read().strip()
-            code, output = exec_cmd(
-                "grep handle_mailbox_operations /proc/%s/cmdline" % pid
-            )
+            code, output = exec_cmd([
+                "grep", "handle_mailbox_operations", "/proc/%s/cmdline" % pid
+            ])
             if not code:
                 return False
         with open(path, "w") as fp:

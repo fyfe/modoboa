@@ -166,7 +166,7 @@ class AdminParametersForm(param_forms.AdminParametersForm):
             dpath = which("dovecot")
         if dpath is not None:
             try:
-                code, version = exec_cmd("%s --version" % dpath)
+                code, version = exec_cmd([dpath, "--version"])
             except OSError:
                 hide_fields = True
             else:

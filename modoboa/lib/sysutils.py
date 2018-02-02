@@ -12,6 +12,8 @@ import os
 import re
 import subprocess
 
+from django.utils.encoding import smart_bytes
+
 
 def exec_cmd(cmd, sudo_user=None, pinput=None, capture_output=True, **kwargs):
     """Execute a shell command.
@@ -27,15 +29,19 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, capture_output=True, **kwargs):
     :return: return code, command output
     """
     if sudo_user is not None:
-        cmd = "sudo -u %s %s" % (sudo_user, cmd)
-    kwargs["shell"] = True
+        if isinstance(cmd, list):
+            cmd = ["sudo", "-u", sudo_user] + cmd
+        else:
+            cmd = "sudo -u %s %s" % (sudo_user, cmd)
+            kwargs["shell"] = True
     if pinput is not None:
         kwargs["stdin"] = subprocess.PIPE
     if capture_output:
-        kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        kwargs["stdout"] = subprocess.PIPE
+        kwargs["stderr"] = subprocess.STDOUT
     process = subprocess.Popen(cmd, **kwargs)
     if pinput or capture_output:
-        c_args = [pinput] if pinput is not None else []
+        c_args = [smart_bytes(pinput)] if pinput is not None else []
         output = process.communicate(*c_args)[0]
     else:
         output = None
