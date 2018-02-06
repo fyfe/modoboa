@@ -31,112 +31,131 @@ following minimum versions.
 | modoboa-webmail           | 1.4.0           |
 +---------------------------+-----------------+
 
-.. _step_01:
-1. Upgrade modoboa
+*. Upgrade Modoboa
+^^^^^^^^^^^^^^^^^^
 
-  .. sourcecode:: bash
+.. sourcecode:: bash
 
-    > pip install --upgrade <extension_name>==1.10.0
+  (venv)> pip install --upgrade <extension_name>==1.10.0
 
-.. _step_02:
-2. Upgrade installed extensions
+*. Upgrade extensions
+^^^^^^^^^^^^^^^^^^^^^
+To list the installed extensions run the following command.
+.. sourcecode:: bash
 
-  .. sourcecode:: bash
+  (venv)> pip freeze | grep "^modoboa-"
 
-    # list installed extensions
-    > pip freeze | grep "^modoboa-"
-    # for each extension
-    > pip install --upgrade <extension_name>\>=<minimum_version>
+The update each entension using the following command replacing
+`<extension_name>` with the name of the extension and `<miniumum_version>`
+with the minimum version listed in the table above.
 
-.. _step_03:
-3. Make the following changes to :file:`settings.py`
-  * Add `'modoboa.transport'` to `MODOBOA_APPS`:
+.. sourcecode:: bash
 
-    .. sourcecode:: python
+  (venv)> pip install --upgrade <extension_name>>=<minimum_version>
 
-      MODOBOA_APPS = (
-       'modoboa',
-       'modoboa.core',
-       'modoboa.lib',
-       'modoboa.admin',
-       'modoboa.transport',
-       'modoboa.relaydomains',
-       'modoboa.limits',
-       'modoboa.parameters',
-      )
+*. Modify :file:`settings.py`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Make the following changes to :file:`settings.py`
+* Add `'modoboa.transport'` to `MODOBOA_APPS`:
 
-  * Replace the following line:
+.. sourcecode:: python
 
-    .. sourcecode:: python
+  MODOBOA_APPS = (
+   'modoboa',
+   'modoboa.core',
+   'modoboa.lib',
+   'modoboa.admin',
+   'modoboa.transport',
+   'modoboa.relaydomains',
+   'modoboa.limits',
+   'modoboa.parameters',
+  )
 
-      MIDDLEWARE_CLASSES = (
+* Replace the following line:
 
-    by:
+.. sourcecode:: python
 
-    .. sourcecode:: python
+  MIDDLEWARE_CLASSES = (
 
-      MIDDLEWARE = (
+  by:
 
-  * If you use the amavis plugin, make sure to include its configuration as
-    follows:
+.. sourcecode:: python
 
-    .. sourcecode:: python
+  MIDDLEWARE = (
 
-      from modoboa_amavis import settings as modoboa_amavis_settings
-      modoboa_amavis_settings.apply(globals())
+* If you use the amavis plugin, make sure to include its configuration as
+  follows:
 
-.. _step_04:
-4. Run database migrations and update static content:
+.. sourcecode:: python
 
-  .. sourcecode:: bash
+  from modoboa_amavis import settings as modoboa_amavis_settings
+  modoboa_amavis_settings.apply(globals())
 
-    > cd <modoboa_instance_dir>
-    > python manage.py migrate
-    > python manage.py collectstatic
+*. Update database and static content
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Run database migrations and update static content:
 
-.. _step_05:
-5. Run Djangos deployment checks:
+.. sourcecode:: bash
 
-  .. sourcecode:: bash
+  (venv)> cd <modoboa_instance_dir>
+  (venv)> python manage.py migrate
+  (venv)> python manage.py collectstatic
 
-    > cd <modoboa_instance_dir>
-    > python manage.py check --deploy
+*. Deployment checks
+^^^^^^^^^^^^^^^^^^^^
+Run Djangos deployment checks:
 
-  .. note::
+.. sourcecode:: bash
 
-    The `security.W001` warning can be ignored as this is handled by nginx.
+  (venv)> cd <modoboa_instance_dir>
+  (venv)> python manage.py check --deploy
 
-.. _step_06:
-6. Restart your web server
+.. note::
 
-.. _step_07:
-7. Update postfix map files as follows:
+  The `security.W001` warning can be ignored as this is handled by nginx.
 
-  .. sourcecode:: bash
+*. Restart Modoboa
+^^^^^^^^^^^^^^^^^^
+For example if you installed Modoboa using the installer restart uwsgi
 
-    > rm -f <path>/modoboa-postfix-maps.chk
-    > python manage.py generate_postfix_maps --force --destdir <path>
+.. sourcecode:: bash
 
-.. _step_08:
-8. Modify postfix's configuration as follows:
+  (venv)> sudo service uwsgi restart
 
-  smtpd_sender_login_maps =
-    <driver>:<path>/sql-sender-login-map.cf
+*. Update Postfix configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* Update postfix map files as follows:
 
-  transport_maps =
-    <driver>:<path>/sql-transport.cf
-    <driver>:<path>/sql-spliteddomains-transport.cf
-    # other map files...
+.. sourcecode:: bash
 
-  * Replace ``<driver>`` and ``<path>`` by your values.
+  (venv)> rm -f <path>/modoboa-postfix-maps.chk
+  (venv)> python manage.py generate_postfix_maps --force --destdir <path>
 
-  * If ``transport_maps`` contains ``sql-relaydomains-transport.cf``, remove it.
+* Modify postfix's configuration as follows:
 
-.. _step_09:
-9. Reload postfix
+smtpd_sender_login_maps =
+  <driver>:<path>/sql-sender-login-map.cf
 
-.. _step_10:
-10. Add the following cron job in order to generate DKIM keys:
+transport_maps =
+  <driver>:<path>/sql-transport.cf
+  <driver>:<path>/sql-spliteddomains-transport.cf
+  # other map files...
+
+* Replace ``<driver>`` and ``<path>`` by your values.
+
+* If ``transport_maps`` contains ``sql-relaydomains-transport.cf``, remove it.
+
+* Reload Postfix configuration:
+
+.. sourcecode:: bash
+
+  (venv)> sudo service postfix reload
+
+.* New cron job
+^^^^^^^^^^^^^^^^
+Add the following cron job in order to generate DKIM keys:
+
+.. sourcecode:: bash
 
   # Generate DKIM keys (they will belong to the user running this job)
   *       *       *       *       *       root    $PYTHON $INSTANCE/manage.py modo manage_dkim_keys
