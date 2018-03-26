@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 
+from rest_framework.permissions import DjangoModelPermissions
+
 from modoboa.core import constants as core_constants, signals as core_signals
 from modoboa.core.models import ObjectAccess, User
 
@@ -154,3 +156,15 @@ def add_permissions_to_group(group, permissions):
         group.permissions.add(
             Permission.objects.get(content_type=ct, codename=permname)
         )
+
+
+class ExtendedDjangoModelPermissions(DjangoModelPermissions):
+    perms_map = {
+        'GET': ['%(app_label)s.view_%(model_name)s'],
+        'OPTIONS': ['%(app_label)s.view_%(model_name)s'],
+        'HEAD': ['%(app_label)s.view_%(model_name)s'],
+        'POST': ['%(app_label)s.add_%(model_name)s'],
+        'PUT': ['%(app_label)s.change_%(model_name)s'],
+        'PATCH': ['%(app_label)s.change_%(model_name)s'],
+        'DELETE': ['%(app_label)s.delete_%(model_name)s'],
+    }

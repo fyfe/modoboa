@@ -17,9 +17,13 @@ from dns.name import IDNA_2008_UTS_46
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.utils import six
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext as _
 
+from rest_framework.renderers import BaseRenderer, JSONRenderer
+
+from modoboa.admin import serializers_v2
 from modoboa.core import signals as core_signals
 from modoboa.core.models import User
 from modoboa.lib.exceptions import PermDeniedException
@@ -238,3 +242,40 @@ def make_password():
     return "".join(
         random.SystemRandom().choice(
             string.ascii_letters + string.digits) for _ in range(length))
+
+
+def export_data(export_type, renderer=None):
+    if isinstance(export_type, six.text_type):
+        export_type = [export_type]
+
+    if renderer is None:
+        renderer = JSONRenderer
+    elif not issubclass(renderer, BaseRenderer):
+        raise ValueError(
+            _("%(parameter)s should be a sub-class of %(class)s") %
+            {
+                "parameter": "renderer",
+                "class": "rest_framework.renderers.BaseRenderer"
+            }
+        )
+
+    export_context = {
+        "export": True,
+        "idn_as_ascii": True,
+    }
+    data = {}
+
+    if "domains" in export_type:
+        domains = Domain.objects.all()
+        serializer = serializers_v2.DomainSerializer(
+            domains, many=True, context=export_context
+        )
+        data["Domain"] = serializer.data
+
+        domain_aliases = DomainAlias.objects.all()
+        serializer = serializers_v2.DomainAliasSerializer(
+            domain_aliases, many=True, context=export_context
+        )
+        data["DomainAlias"] = serializer.data
+
+    return renderer().render(data)

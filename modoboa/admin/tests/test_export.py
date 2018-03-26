@@ -4,11 +4,15 @@
 
 from __future__ import unicode_literals
 
+import json
+
 from django.urls import reverse
 from django.utils.encoding import force_text
 
+from modoboa.admin import factories, models
+from modoboa.admin.lib import export_data
 from modoboa.lib.tests import ModoTestCase
-from .. import factories, models
+from modoboa.transport import factories as tr_factories
 
 
 class ExportTestCase(ModoTestCase):
@@ -113,3 +117,134 @@ class ExportTestCase(ModoTestCase):
             response.content.decode().strip(),
             "alias;alias@test.com;True;user@test.com\r\nalias;forward@test.com;True;user@external.com\r\nalias;postmaster@test.com;True;test@truc.fr;toto@titi.com"  # NOQA:E501
         )
+
+
+class DRFExportTestCase(ModoTestCase):
+    """Test cases for the new export system using DRF serializers."""
+
+    def test_export_domain(self):
+        """Ensure domains are exported correctly."""
+        factories.DomainFactory(name="example.com")
+
+        expected = {
+            "name": "example.com",
+            "type": "domain",
+            "quota": 0,
+            "default_mailbox_quota": 10,
+            "enabled": True,
+
+            "transport": None,
+            "enable_dns_checks": True,
+
+            "enable_dkim": False,
+            "dkim_key_selector": "modoboa",
+            "dkim_key_length": None,
+            "dkim_public_key": "",
+            "dkim_private_key_path": "",
+        }
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["Domain"]), 1)
+        self.assertEqual(data["Domain"][0], expected)
+
+    def test_export_unicode_domain(self):
+        """Ensure unicode domain names are correctly exported."""
+        # 例.com == xn--fsq.com ; aka example.com in Japanese
+        factories.DomainFactory(name="例.com")
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["Domain"]), 1)
+        self.assertEqual(data["Domain"][0]["name"], "xn--fsq.com")
+
+    def test_export_punycode_domain(self):
+        """Ensure punycode domain names are correctly exported."""
+        # 例.com == xn--fsq.com ; aka example.com in Japanese
+        factories.DomainFactory(name="xn--fsq.com")
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["Domain"]), 1)
+        self.assertEqual(data["Domain"][0]["name"], "xn--fsq.com")
+
+    def test_export_domain_alias(self):
+        """Ensure domain aliases are exported correctly."""
+        domain = factories.DomainFactory(name="example.com")
+        factories.DomainAliasFactory(name="example.net", target=domain)
+
+        expected = {
+            "name": "example.net",
+            "target": "example.com",
+            "enabled": True,
+        }
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["DomainAlias"]), 1)
+        self.assertEqual(data["DomainAlias"][0], expected)
+
+    def test_export_unicode_domain_alias(self):
+        """Ensure unicode domain aliases are exported correctly."""
+        # 例.com == xn--fsq.com ; aka example.com in Japanese
+        # उदाहरण.com == xn--p1b6ci4b4b3a.com ; aka example.com in Hindi
+        domain = factories.DomainFactory(name="例.com")
+        factories.DomainAliasFactory(name="उदाहरण.com", target=domain)
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["DomainAlias"]), 1)
+        self.assertEqual(data["DomainAlias"][0]["name"], "xn--p1b6ci4b4b3a.com")
+        self.assertEqual(data["DomainAlias"][0]["target"], "xn--fsq.com")
+
+    def test_export_punycode_domain_alias(self):
+        """Ensure punycode domain aliases are exported correctly."""
+        # 例.com == xn--fsq.com ; aka example.com in Japanese
+        # उदाहरण.com == xn--p1b6ci4b4b3a.com ; aka example.com in Hindi
+        domain = factories.DomainFactory(name="xn--fsq.com")
+        factories.DomainAliasFactory(name="xn--p1b6ci4b4b3a.com", target=domain)
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["DomainAlias"]), 1)
+        self.assertEqual(data["DomainAlias"][0]["name"], "xn--p1b6ci4b4b3a.com")
+        self.assertEqual(data["DomainAlias"][0]["target"], "xn--fsq.com")
+
+    def test_export_relaydomain(self):
+        """Ensure relay domain is exported correctly."""
+        transport = tr_factories.TransportFactory(
+            pattern="relay.example.com", service="relay",
+            _settings={
+                "relay_target_host": "external.example.com",
+                "relay_target_port": "25",
+                "relay_verify_recipients": False
+            }
+        )
+        factories.DomainFactory(
+            name="relay.example.com", type="relaydomain", transport=transport
+        )
+
+        expected = {
+            "pattern": "relay.example.com",
+            "service": "relay",
+            "next_hop": "[external.example.com]:25",
+            "_settings": {
+                "relay_target_host": "external.example.com",
+                "relay_target_port": "25",
+                "relay_verify_recipients": False,
+            },
+        }
+
+        json_data = export_data("domains").decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(len(data["Domain"]), 1)
+        self.assertEqual(data["Domain"][0]["name"], "relay.example.com")
+        self.assertEqual(data["Domain"][0]["type"], "relaydomain")
+        self.assertEqual(data["Domain"][0]["transport"], expected)
