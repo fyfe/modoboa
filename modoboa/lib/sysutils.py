@@ -7,9 +7,13 @@ This module extra functions/shortcuts to communicate with the system
 
 from __future__ import unicode_literals
 
+import codecs
+import contextlib
 import inspect
+import io
 import re
 import subprocess
+import sys
 
 
 def exec_cmd(cmd, sudo_user=None, pinput=None, capture_output=True, **kwargs):
@@ -52,3 +56,27 @@ def guess_extension_name():
     if match is not None:
         return match.group(1)
     return None
+
+
+@contextlib.contextmanager
+def smart_open(filename, *args, **kwargs):
+    """Wrapper for open to allow '-' to be used as an alias to open stdout."""
+    if filename != "-":
+        fh = io.open(filename, *args, **kwargs)
+    else:
+        # stdout on Python 2 expects bytes, wrap stdout with a StreamWriter to
+        # encode ouput correctly.
+        if sys.stdout.isatty():
+            # use console encoding
+            encoding = sys.stdout.encoding
+        else:
+            # output is being piped somewhere ie less or gz
+            encoding = kwargs.get("encoding", "utf-8")
+        fh = codecs.getwriter(encoding)(sys.stdout)
+
+    try:
+        yield fh
+    finally:
+        if not isinstance(fh, codecs.StreamWriter):
+            # don't try closing stdout (wrapped in a StreamWriter)
+            fh.close()
