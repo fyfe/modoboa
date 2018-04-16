@@ -27,6 +27,16 @@ class DomainSerializer(serializers.ModelSerializer):
             del rep["id"]
             del rep["creation"]
             del rep["last_modification"]
+        else:
+            rep["tags"] = obj.tags
+            rep["dnsbl_status_color"] = obj.dnsbl_status_color
+            if self.context.get("include_counts", False):
+                rep["counts"] = {
+                    "domain_alias": obj.domainalias_count,
+                    "mailbox": obj.mailbox_count,
+                    "mailbox_alias": obj.mbalias_count,
+                    "identities": obj.identities_count,
+                }
         if "name" in rep:
             rep["name"] = convert_idn(
                 rep["name"], self.context.get("idn_as_ascii", True)

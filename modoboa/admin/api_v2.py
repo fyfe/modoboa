@@ -31,6 +31,9 @@ class DomainViewSet(viewsets.ModelViewSet):
         context["idn_as_ascii"] = to_bool(
             self.request.query_params.get("idn_as_ascii", True)
         )
+        context["include_counts"] = to_bool(
+            self.request.query_params.get("include_counts", False)
+        )
         return context
 
     def perform_destroy(self, instance):
