@@ -4,8 +4,6 @@
 
 from __future__ import unicode_literals
 
-from pprint import pprint
-
 from rest_framework import serializers
 
 from modoboa.admin import models as admin_models
@@ -16,7 +14,7 @@ from modoboa.transport.serializers_v2 import TransportSerializer
 class DomainSerializer(serializers.ModelSerializer):
     """Domain serializer."""
 
-    transport = TransportSerializer()
+    transport = TransportSerializer(allow_null=True)
 
     class Meta:
         model = admin_models.Domain
@@ -46,9 +44,6 @@ class DomainSerializer(serializers.ModelSerializer):
         return rep
 
     def to_internal_value(self, data):
-        pprint(data)
-        if "transport"not in data:
-            data["transport"] = None
         value = super(DomainSerializer, self).to_internal_value(data)
         if "name" in value:
             # To maintain backward compatabity convert punycode domains
