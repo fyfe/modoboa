@@ -1,8 +1,8 @@
 language: python
 python:
   - '2.7'
-  - '3.4'
-  - '3.5'
+  #- '3.4'
+  #- '3.5'
   - '3.6'
 
 env:
@@ -10,7 +10,7 @@ env:
     - PYTHONWARNINGS="default,ignore::PendingDeprecationWarning,ignore::ResourceWarning"
   matrix:
     - DB="POSTGRESQL"
-    - DB="MYSQL"
+    #- DB="MYSQL"
 
 sudo: false
 
@@ -30,6 +30,7 @@ services:
   - mysql
 
 before_install:
+  - pip install -U pip setuptools
   - pip install codecov
 
 install:
@@ -38,7 +39,7 @@ install:
   - pip install -r test-requirements.txt
   - if [ $DB = POSTGRESQL ]; then pip install -r postgresql-requirements.txt ; fi
   - if [ $DB = MYSQL ]; then pip install -r mysql-requirements.txt ; fi
-  - python setup.py develop
+  - pip install -e .
 
 before_script:
   - mkdir /tmp/slapd
