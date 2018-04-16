@@ -11,9 +11,7 @@ from django.utils.encoding import smart_text
 
 from modoboa.lib import sysutils
 from modoboa.parameters import tools as param_tools
-
-from .... import models
-from .... import signals
+from .... import models, signals
 
 
 class ManageDKIMKeys(BaseCommand):
