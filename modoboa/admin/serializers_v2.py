@@ -53,6 +53,8 @@ class DomainSerializer(serializers.ModelSerializer):
             value["name"] = convert_idn(
                 value["name"], self.context.get("idn_as_ascii", False)
             )
+        if "transport"not in value:
+            value["transport"] = None
         return value
 
 
