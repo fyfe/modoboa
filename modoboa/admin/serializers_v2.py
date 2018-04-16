@@ -4,6 +4,8 @@
 
 from __future__ import unicode_literals
 
+from pprint import pprint
+
 from rest_framework import serializers
 
 from modoboa.admin import models as admin_models
@@ -44,6 +46,9 @@ class DomainSerializer(serializers.ModelSerializer):
         return rep
 
     def to_internal_value(self, data):
+        pprint(data)
+        if "transport"not in data:
+            data["transport"] = None
         value = super(DomainSerializer, self).to_internal_value(data)
         if "name" in value:
             # To maintain backward compatabity convert punycode domains
@@ -53,8 +58,6 @@ class DomainSerializer(serializers.ModelSerializer):
             value["name"] = convert_idn(
                 value["name"], self.context.get("idn_as_ascii", False)
             )
-        if "transport"not in value:
-            value["transport"] = None
         return value
 
 
