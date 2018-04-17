@@ -4,9 +4,7 @@
 
 import io
 import logging
-import os
 import sys
-from pprint import pprint
 
 import pkg_resources
 
@@ -22,29 +20,40 @@ else:
 _LOG = logging.getLogger("modoboa.core")
 
 
-def load_configuration(filename=None):
-    filenames = [
-        pkg_resources.resource_filename('modoboa', 'default_settings.ini')
-    ]
-
-    if filename is not None:
-        filenames.insert(0, filename)
+def load_configuration(filenames=None):
+    """Load configuration from ini file."""
+    if filenames is None:
+        filenames = []
+    elif isinstance(filenames, six.text_type):
+        filenames = [filenames]
+    elif isinstance(filenames, [list, set]):
+        # remove any empty strings or None values
+        filenames = [
+            filename
+            for filename in filenames
+            if filename is not None and filename
+        ]
     else:
-        env_var = os.environ.get("MODOBOA_SETTINGS", None)
-        if env_var is not None:
-            filenames.insert(0, env_var)
-        else:
-            pprint(os.environ)
+        raise ValueError(
+            "filenames should be a list of configuration files to load"
+        )
+
+    filenames.insert(
+        0, pkg_resources.resource_filename('modoboa', 'default_settings.ini')
+    )
 
     read_ok = []
     for filename in filenames:
         try:
             with io.open(filename, encoding="utf-8") as fp:
-                CONFIG.read_file(fp, filename)
+                if six.PY3:
+                    CONFIG.read_file(fp, filename)
+                else:
+                    CONFIG.readfp(fp, filename)
         except OSError:
             continue
         read_ok.append(filename)
 
     _LOG.debug("loaded configuration from %s", ", ".join(read_ok))
-    print("loaded configuration from %s", ", ".join(read_ok))
+    print("loaded configuration from %s" % ", ".join(read_ok))
     CONFIG.write(sys.stdout)

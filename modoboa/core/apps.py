@@ -8,7 +8,7 @@ from django.apps import AppConfig
 from django.db.models import signals
 from django.utils.translation import ugettext_lazy
 
-from modoboa.core.configuration import load_configuration
+from modoboa.core.configuration import CONFIG
 
 
 def load_core_settings():
@@ -31,7 +31,12 @@ class CoreConfig(AppConfig):
     verbose_name = "Modoboa core"
 
     def ready(self):
-        load_configuration()
+        if not CONFIG.getboolean("modoboa", "configuration_loaded"):
+            raise Exception(
+                "Modoboa configuration file has not been loaded in settings.py,"
+                " have you followed the upgrade instructions?"
+            )
+
         load_core_settings()
 
         # Import these to force registration of checks and signals
