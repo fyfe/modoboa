@@ -17,9 +17,11 @@ def load_core_settings():
     """
     from modoboa.parameters import tools as param_tools
     from .app_settings import GeneralParametersForm
+    from modoboa.core.configuration import CONFIG
 
     param_tools.registry.add(
         "global", GeneralParametersForm, ugettext_lazy("General"))
+    CONFIG.load()
 
 
 class CoreConfig(AppConfig):
