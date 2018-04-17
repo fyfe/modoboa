@@ -63,6 +63,8 @@ def apply_to_settings(settings):
         if app == "modoboa.core":
             # avoid an infinite loop
             continue
-
-        config = import_module(".configuration", app)
-        config.apply_to_settings(settings)
+        try:
+            config = import_module(".configuration", app)
+            config.apply_to_settings(settings)
+        except ImportError:
+            pass
