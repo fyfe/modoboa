@@ -2,6 +2,7 @@
 
 """Configuration for modoboa.core"""
 
+import io
 import logging
 import os
 import sys
@@ -21,21 +22,29 @@ else:
 _LOG = logging.getLogger("modoboa.core")
 
 
-def load_configuration(file_path=None):
-    file_paths = [
+def load_configuration(filename=None):
+    filenames = [
         pkg_resources.resource_filename('modoboa', 'default_settings.ini')
     ]
 
-    if file_path is not None:
-        file_paths.insert(0, file_path)
+    if filename is not None:
+        filenames.insert(0, filename)
     else:
         env_var = os.environ.get("MODOBOA_SETTINGS", None)
         if env_var is not None:
-            file_paths.insert(0, env_var)
+            filenames.insert(0, env_var)
         else:
             pprint(os.environ)
 
-    loaded_from = CONFIG.read(file_paths, encoding="utf-8")
-    _LOG.debug("loaded configuration from %s", ", ".join(loaded_from))
-    print("loaded configuration from %s", ", ".join(loaded_from))
+    read_ok = []
+    for filename in filenames:
+        try:
+            with io.open(filename, encoding="utf-8") as fp:
+                CONFIG.read_file(fp, filename)
+        except OSError:
+            continue
+        read_ok.append(filename)
+
+    _LOG.debug("loaded configuration from %s", ", ".join(read_ok))
+    print("loaded configuration from %s", ", ".join(read_ok))
     CONFIG.write(sys.stdout)
