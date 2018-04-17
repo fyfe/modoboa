@@ -266,4 +266,14 @@ LOGGING = {
     }
 }
 
+from modoboa.core import configuration
+configuration.load(
+    filenames=[os.environ.get(
+        "MODOBOA_SETTINGS",
+        os.path.join(BASE_DIR, "modoboa.ini")
+    )],
+    apps=MODOBOA_APPS
+)
+configuration.apply_to_settings(globals())
+
 # Load settings from extensions

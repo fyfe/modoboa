@@ -5,9 +5,9 @@
 from __future__ import unicode_literals
 
 from django.apps import AppConfig
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import signals
 from django.utils.translation import ugettext_lazy
-from django.core.exceptions import ImproperlyConfigured
 
 from modoboa.core import configuration
 
