@@ -8,6 +8,8 @@ from django.apps import AppConfig
 from django.db.models import signals
 from django.utils.translation import ugettext_lazy
 
+from modoboa.core.configuration import load_configuration
+
 
 def load_core_settings():
     """Load core settings.
@@ -17,11 +19,9 @@ def load_core_settings():
     """
     from modoboa.parameters import tools as param_tools
     from .app_settings import GeneralParametersForm
-    from modoboa.core.configuration import CONFIG
 
     param_tools.registry.add(
         "global", GeneralParametersForm, ugettext_lazy("General"))
-    CONFIG.load()
 
 
 class CoreConfig(AppConfig):
@@ -31,6 +31,7 @@ class CoreConfig(AppConfig):
     verbose_name = "Modoboa core"
 
     def ready(self):
+        load_configuration()
         load_core_settings()
 
         # Import these to force registration of checks and signals
