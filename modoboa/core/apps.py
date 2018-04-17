@@ -7,8 +7,9 @@ from __future__ import unicode_literals
 from django.apps import AppConfig
 from django.db.models import signals
 from django.utils.translation import ugettext_lazy
+from django.core.exceptions import ImproperlyConfigured
 
-from modoboa.core.configuration import CONFIG
+from modoboa.core import configuration
 
 
 def load_core_settings():
@@ -31,8 +32,8 @@ class CoreConfig(AppConfig):
     verbose_name = "Modoboa core"
 
     def ready(self):
-        if not CONFIG.getboolean("modoboa", "configuration_loaded"):
-            raise Exception(
+        if not configuration.defaults_loaded():
+            raise ImproperlyConfigured(
                 "Modoboa configuration file has not been loaded in settings.py,"
                 " have you followed the upgrade instructions?"
             )
