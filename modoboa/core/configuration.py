@@ -49,7 +49,7 @@ def load(filenames=None, apps=None):
             try:
                 with io.open(filename, encoding="utf-8") as fp:
                     CONFIG.readfp(fp, filename)
-            except OSError:
+            except IOError:
                 continue
             read_ok.append(filename)
 
@@ -59,7 +59,7 @@ def load(filenames=None, apps=None):
 
 
 def apply_to_settings(settings):
-    for app in settings.MODOBOA_APPS:
+    for app in settings["MODOBOA_APPS"]:
         if app == "modoboa.core":
             # avoid an infinite loop
             continue
