@@ -15,7 +15,7 @@ import string
 from random import Random
 
 from django.utils.crypto import constant_time_compare
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes, force_str, force_text
 
 
 class PasswordHasher(object):
@@ -28,7 +28,7 @@ class PasswordHasher(object):
         self._target = target
 
     def _encrypt(self, clearvalue, salt=None):
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _b64encode(self, pwhash):
         """Encode :keyword:`pwhash` using base64 if needed.
@@ -53,7 +53,8 @@ class PasswordHasher(object):
         :rtype: str
         :return: encrypted password
         """
-        pwhash = self._b64encode(self._encrypt(force_text(clearvalue)))
+        pwhash = self._encrypt(clearvalue)
+        pwhash = self._b64encode(force_bytes(pwhash))
         return "%s%s" % (self.scheme, force_text(pwhash))
 
     def verify(self, clearvalue, hashed_value):
@@ -63,8 +64,10 @@ class PasswordHasher(object):
         :param str hashed_value: password previously hashed
         :return: True if passwords match, False otherwise
         """
+        pwhash = self._encrypt(clearvalue, hashed_value)
+        pwhash = self._b64encode(force_bytes(pwhash))
         return constant_time_compare(
-            self._b64encode(self._encrypt(clearvalue, hashed_value)),
+            pwhash,
             hashed_value
         )
 
@@ -102,7 +105,7 @@ class CRYPTHasher(PasswordHasher):
                     2
                 )
             )
-        return crypt.crypt(clearvalue, salt)
+        return crypt.crypt(force_str(clearvalue), force_str(salt))
 
 
 class MD5Hasher(PasswordHasher):
