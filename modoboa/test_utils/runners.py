@@ -2,12 +2,12 @@
 
 from __future__ import unicode_literals
 
-from django.test.simple import DjangoTestSuiteRunner
-from django.utils.encoding import force_text
 import operator
 import time
-from django.utils.unittest import TestSuite
+from unittest import TestSuite
 
+from django.test.runner import DiscoverRunner
+from django.utils.encoding import force_text
 
 TIMINGS = {}
 
@@ -28,7 +28,7 @@ class TimingSuite(TestSuite):
         super(TimingSuite, self).addTest(test)
 
 
-class TimedTestRunner(DjangoTestSuiteRunner):
+class TimedTestRunner(DiscoverRunner):
     def build_suite(self, test_labels, extra_tests=None, **kwargs):
         suite = super(TimedTestRunner, self).build_suite(
             test_labels, extra_tests, **kwargs
