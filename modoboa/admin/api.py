@@ -31,7 +31,6 @@ class DomainViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated, DjangoModelPermissions, ]
     serializer_class = serializers.DomainSerializer
-    http_method_names = ["get", "post", "put", "delete"]
 
     def get_queryset(self):
         """Filter queryset based on current user."""
@@ -70,7 +69,8 @@ class AccountViewSet(viewsets.ModelViewSet):
         """Return a serializer."""
         action_dict = {
             "list": serializers.AccountSerializer,
-            "retrieve": serializers.AccountSerializer
+            "retrieve": serializers.AccountSerializer,
+            "password": serializers.AccountPasswordSerializer
         }
         return action_dict.get(
             self.action, serializers.WritableAccountSerializer)
@@ -94,8 +94,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             user = core_models.User.objects.get(pk=pk)
         except core_models.User.DoesNotExist:
             raise http.Http404
-        serializer = serializers.AccountPasswordSerializer(
-            user, data=request.data)
+        serializer = self.get_serializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response()
